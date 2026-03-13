@@ -23,10 +23,17 @@ def get_conn():
 
 def init_db():
     """Create tables + pgvector extension if they don't exist."""
-    conn = get_conn()
+    # Use a plain connection first (without register_vector)
+    # because the extension might not exist yet
+    conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
+    # Create the extension FIRST
     cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    conn.commit()
+
+    # NOW register the vector type on this connection
+    register_vector(conn)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS files (
