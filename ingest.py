@@ -39,7 +39,7 @@ def extract_pages(pdf_path: Path) -> list[dict]:
     doc = fitz.open(pdf_path)
     pages = []
     for i, page in enumerate(doc):
-        text = page.get_text("text").strip()
+        text = page.get_text("text").replace("\x00", "").strip()
         if text:
             pages.append({"page": i + 1, "text": text})
     doc.close()
