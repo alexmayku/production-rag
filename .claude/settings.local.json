@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_figma_figma__get_design_context",
+      "Bash(find /Users/alexsmilansky/repos/FAC/production-rag -not -path */.git* -not -path */__pycache__/* -not -path *.pyc)",
+      "mcp__plugin_figma_figma__get_metadata"
+    ]
+  }
+}

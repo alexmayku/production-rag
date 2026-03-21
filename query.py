@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 import anthropic
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
@@ -59,6 +59,25 @@ class FileInfo(BaseModel):
     id: int
     filename: str
     ingested_at: str
+
+
+class HistoryEntry(BaseModel):
+    id: int
+    query_text: str
+    answer: str
+    created_at: str
+
+
+class HistoryResponse(BaseModel):
+    entries: list[HistoryEntry]
+    total: int
+
+
+class ChunkInfo(BaseModel):
+    id: int
+    chunk_index: int
+    page_number: int | None
+    text: str
 
 
 # ---------------------------------------------------------------------------
@@ -230,9 +249,82 @@ def stats():
     }
 
 
+@app.get("/history", response_model=HistoryResponse)
+def history(limit: int = 20, offset: int = 0):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM queries")
+    total = cur.fetchone()[0]
+    cur.execute(
+        "SELECT id, query_text, answer, created_at FROM queries ORDER BY created_at DESC LIMIT %s OFFSET %s",
+        (limit, offset),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return HistoryResponse(
+        entries=[
+            HistoryEntry(id=r[0], query_text=r[1], answer=r[2], created_at=str(r[3]))
+            for r in rows
+        ],
+        total=total,
+    )
+
+
+@app.get("/files/{file_id}/chunks", response_model=list[ChunkInfo])
+def get_file_chunks(file_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, chunk_index, page_number, text FROM chunks WHERE file_id = %s ORDER BY chunk_index",
+        (file_id,),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    if not rows:
+        raise HTTPException(404, "File not found or has no chunks")
+    return [
+        ChunkInfo(id=r[0], chunk_index=r[1], page_number=r[2], text=r[3])
+        for r in rows
+    ]
+
+
+DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
+
+
+@app.post("/upload")
+async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(400, "Only PDF files are accepted.")
+    dest = DATA_DIR / file.filename
+    contents = await file.read()
+    dest.write_bytes(contents)
+    from ingest import ingest_file
+    background_tasks.add_task(ingest_file, dest)
+    return {"filename": file.filename, "status": "processing"}
+
+
+@app.delete("/chunks/{chunk_id}")
+def delete_chunk(chunk_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM chunks WHERE id = %s RETURNING id", (chunk_id,))
+    deleted = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    if not deleted:
+        raise HTTPException(404, "Chunk not found")
+    return {"deleted": chunk_id}
+
+
 # ---------------------------------------------------------------------------
 # Frontend
 # ---------------------------------------------------------------------------
 @app.get("/")
 def serve_frontend():
     return FileResponse("frontend/index.html")
+
+
+app.mount("/pdfs", StaticFiles(directory="data"), name="pdfs")

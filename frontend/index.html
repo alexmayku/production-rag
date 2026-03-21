@@ -3,159 +3,388 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAG System</title>
+<title>RAG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  :root {
+    --bg: #faf9f6;
+    --text-primary: #1d1d1d;
+    --text-secondary: #5e5e5e;
+    --border: rgba(196,199,199,0.15);
+    --border-solid: #efeeeb;
+    --border-footer: #e9e8e5;
+    --confidence-green: #64b97a;
+    --citation-bg: #f4f3f0;
+    --white: #ffffff;
+    --header-bg: rgba(250,249,246,0.95);
+    --avatar-bg: #e3e2e0;
+    --divider-bg: #c4c7c7;
+    --modal-backdrop: rgba(0,0,0,0.85);
+  }
+
+  /* ── Dark Mode ── */
+  body.dark-mode {
+    --bg: #1a1a1a;
+    --text-primary: #e8e8e8;
+    --text-secondary: #9a9a9a;
+    --border: rgba(255,255,255,0.1);
+    --border-solid: #2a2a2a;
+    --border-footer: #2a2a2a;
+    --confidence-green: #64b97a;
+    --citation-bg: #252525;
+    --white: #2a2a2a;
+    --header-bg: rgba(26,26,26,0.95);
+    --avatar-bg: #333;
+    --divider-bg: rgba(255,255,255,0.15);
+    --modal-backdrop: rgba(0,0,0,0.92);
+  }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0a0a0a;
-    color: #e0e0e0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 2rem 1rem;
   }
 
-  .container {
-    width: 100%;
-    max-width: 720px;
+  /* ── Header ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--header-bg);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: #fff;
-  }
-
-  .subtitle {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 2rem;
-  }
-
-  .input-group {
+  .header-inner {
+    max-width: 1600px;
+    margin: 0 auto;
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 48px;
   }
 
-  input[type="text"] {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: 1px solid #333;
-    border-radius: 8px;
-    background: #141414;
-    color: #e0e0e0;
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.2s;
+  .header-logo {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -1.2px;
+    color: var(--text-primary);
   }
 
-  input[type="text"]:focus {
-    border-color: #555;
+  .header-nav {
+    display: flex;
+    gap: 48px;
+    align-items: center;
   }
 
-  button {
-    padding: 0.75rem 1.25rem;
+  .header-nav a {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    letter-spacing: -0.45px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    cursor: pointer;
+    padding-bottom: 6px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .header-nav a:hover { color: var(--text-primary); }
+
+  .header-nav a.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--text-primary);
+  }
+
+  .header-divider {
+    height: 1px;
+    background: var(--border-solid);
+  }
+
+  .header-icons {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .header-icon-btn {
+    background: none;
     border: none;
-    border-radius: 8px;
-    background: #fff;
-    color: #000;
-    font-size: 0.9rem;
-    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-icon-btn:hover { color: var(--text-primary); }
+
+  /* Show/hide sun/moon icons */
+  .icon-sun { display: none; }
+  .icon-moon { display: block; }
+  body.dark-mode .icon-sun { display: block; }
+  body.dark-mode .icon-moon { display: none; }
+
+  .header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 100px;
+    background: var(--avatar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-avatar svg { width: 7px; height: 7px; }
+
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Page Header ── */
+  .page-title {
+    font-size: 96px;
+    font-weight: 400;
+    letter-spacing: -2.4px;
+    line-height: 96px;
+    padding: 128px 0 96px;
+    color: var(--text-primary);
+  }
+
+  /* ── Search View ── */
+  .search-input-section {
+    max-width: 981px;
+    margin: 0 auto;
+    padding: 0 100px;
+    margin-bottom: 96px;
+  }
+
+  .search-input-wrapper {
+    position: relative;
+    padding: 31px 0 17px;
+  }
+
+  .search-input {
+    width: 100%;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 30px;
+    font-weight: 300;
+    letter-spacing: -1.5px;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 19px 0;
+    resize: none;
+    overflow: hidden;
+    min-height: 68px;
+    line-height: 1.4;
+    display: block;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-primary);
+    opacity: 0.4;
+  }
+
+  .search-input-divider {
+    height: 1px;
+    background: var(--divider-bg);
+    opacity: 0.2;
+  }
+
+  .search-results-layout {
+    display: none;
+    grid-template-columns: 1fr 272px;
+    gap: 80px;
+    padding-bottom: 96px;
+    align-items: start;
+    position: relative;
+    z-index: 2;
+  }
+
+  .search-results-layout.visible {
+    display: grid;
+  }
+
+  /* Synthesis section — sticks below header while citations scroll */
+  .synthesis-section {
+    max-width: 677px;
+    position: sticky;
+    top: 97px;
+    background: var(--bg);
+    padding-bottom: 32px;
+  }
+
+  .synthesis-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .synthesis-title {
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  .confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--border-solid);
+    border: 1px solid rgba(196,199,199,0.1);
+    padding: 5px 13px;
+  }
+
+  .confidence-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    color: var(--text-secondary);
+  }
+
+  .confidence-value {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--confidence-green);
+  }
+
+  .synthesis-text {
+    font-size: 18px;
+    line-height: 29.25px;
+    color: var(--text-secondary);
+    max-width: 672px;
+    white-space: pre-wrap;
+  }
+
+  /* Citations sidebar — scrolls normally */
+  .citations-section {
+    min-width: 272px;
+  }
+
+  .citations-heading {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+  }
+
+  .citations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .citation-item {
+    width: 100%;
     cursor: pointer;
     transition: opacity 0.2s;
   }
 
-  button:hover { opacity: 0.85; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .citation-item:hover { opacity: 0.7; }
 
-  /* Stats bar */
-  .stats {
+  .citation-thumbnail {
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: var(--citation-bg);
+    border: 1px solid rgba(29,29,29,0.05);
+    margin-bottom: 16px;
     display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.8rem;
-    color: #555;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
-  .stats span { color: #888; }
-
-  /* Answer section */
-  .answer-box {
-    background: #141414;
-    border: 1px solid #222;
-    border-radius: 10px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-    display: none;
-    line-height: 1.65;
-    font-size: 0.92rem;
+  .citation-thumbnail canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
-  .answer-box.visible { display: block; }
+  .citation-thumbnail-inner {
+    width: 100%;
+    height: 100%;
+    background: #a0a0a0;
+    mix-blend-mode: saturation;
+    opacity: 0.5;
+  }
 
-  .answer-label {
-    font-size: 0.75rem;
-    font-weight: 600;
+  .citation-author {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 20px;
+  }
+
+  .citation-title {
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #555;
-    margin-bottom: 0.6rem;
+    letter-spacing: -0.55px;
+    color: var(--text-primary);
+    line-height: 16.5px;
   }
 
-  .answer-text {
-    white-space: pre-wrap;
+  .citation-date {
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 15px;
   }
 
-  /* Sources */
-  .sources {
-    display: none;
-    margin-bottom: 2rem;
-  }
-
-  .sources.visible { display: block; }
-
-  .sources-label {
-    font-size: 0.75rem;
-    font-weight: 600;
+  .view-all-btn {
+    width: 100%;
+    padding: 17px 1px;
+    border: 1px solid rgba(196,199,199,0.2);
+    background: transparent;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #555;
-    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+    color: var(--text-primary);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
   }
 
-  .source-chip {
-    display: inline-block;
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
-    padding: 0.35rem 0.65rem;
-    margin: 0.2rem;
-    font-size: 0.78rem;
-    color: #888;
-    cursor: default;
-  }
+  .view-all-btn:hover { border-color: rgba(196,199,199,0.5); }
 
-  .source-chip .sim {
-    color: #555;
-    margin-left: 0.3rem;
-  }
-
-  /* Loading */
-  .loading {
+  /* Loading state */
+  .search-loading {
     display: none;
-    color: #555;
-    font-size: 0.85rem;
-    padding: 1rem 0;
+    padding: 48px 0;
+    text-align: center;
   }
 
-  .loading.visible { display: block; }
+  .search-loading.visible { display: block; }
 
-  .loading::after {
+  .search-loading-text {
+    font-size: 18px;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  .search-loading-text::after {
     content: '';
     animation: dots 1.5s infinite;
   }
@@ -166,69 +395,730 @@
     50%  { content: '..'; }
     75%  { content: '...'; }
   }
+
+  /* ── PDF Modal ── */
+  .pdf-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: var(--modal-backdrop);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .pdf-modal.visible { display: flex; }
+
+  .pdf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    padding: 16px 0;
+    color: #fff;
+  }
+
+  .pdf-modal-title {
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+  }
+
+  .pdf-modal-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pdf-modal-nav button {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.2s;
+  }
+
+  .pdf-modal-nav button:hover { background: rgba(255,255,255,0.2); }
+  .pdf-modal-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .pdf-modal-page-info {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .pdf-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .pdf-modal-close:hover { opacity: 1; }
+
+  .pdf-modal-canvas-wrapper {
+    max-width: 800px;
+    max-height: calc(100vh - 120px);
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .pdf-modal-canvas-wrapper canvas {
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+  }
+
+  /* ── History View ── */
+  .timeline-section {
+    margin-bottom: 48px;
+  }
+
+  .timeline-date-header {
+    display: flex;
+    align-items: center;
+    padding-bottom: 17px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .timeline-date-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 3.3px;
+    color: var(--text-secondary);
+  }
+
+  .history-item {
+    display: grid;
+    grid-template-columns: 2fr 7fr 2fr;
+    padding: 32px 0;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .history-item:hover { opacity: 0.7; }
+
+  .history-time {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    padding-top: 7.5px;
+  }
+
+  .history-query-text {
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 40px;
+    color: var(--text-primary);
+  }
+
+  .history-delete {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .history-item:hover .history-delete { opacity: 1; }
+
+  .history-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+  }
+
+  .history-delete-btn:hover { color: var(--text-primary); }
+
+  /* Load more */
+  .load-more-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 0;
+  }
+
+  .load-more-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: var(--text-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .load-more-btn:hover { opacity: 0.6; }
+
+  .load-more-divider {
+    width: 1px;
+    height: 48px;
+    background: #323232;
+  }
+
+  .history-empty {
+    text-align: center;
+    padding: 96px 0;
+    font-size: 18px;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  /* ── Documents View ── */
+  .documents-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .document-item {
+    display: grid;
+    grid-template-columns: 2fr 7fr 2fr;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .document-item:first-child { border-top: 1px solid var(--border); }
+  .document-item:hover { opacity: 0.7; }
+
+  .document-index {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    padding-top: 7.5px;
+  }
+
+  .document-name {
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 40px;
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+
+  .document-date {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-align: right;
+    padding-top: 7.5px;
+  }
+
+  .documents-stats {
+    display: flex;
+    gap: 48px;
+    padding: 48px 0;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 3.3px;
+    color: var(--text-secondary);
+  }
+
+  .stat-value {
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  /* ── Upload ── */
+  .upload-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: border-color 0.2s, opacity 0.2s;
+    margin-bottom: 48px;
+  }
+
+  .upload-btn:hover { border-color: var(--text-secondary); }
+  .upload-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .upload-status {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+  }
+
+  /* ── Document Detail ── */
+  .document-detail { display: none; }
+  .document-detail.active { display: block; padding-bottom: 96px; }
+
+  .document-detail-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 3.3px;
+    color: var(--text-secondary);
+    padding: 16px 0;
+    margin-bottom: 32px;
+    transition: color 0.2s;
+  }
+
+  .document-detail-back:hover { color: var(--text-primary); }
+
+  .document-detail-title {
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 48px;
+    word-break: break-all;
+    line-height: 40px;
+  }
+
+  .document-detail-preview {
+    width: 272px;
+    aspect-ratio: 3/4;
+    background: var(--citation-bg);
+    border: 1px solid rgba(29,29,29,0.05);
+    margin-bottom: 48px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .document-detail-preview:hover { opacity: 0.8; }
+
+  .document-detail-preview canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .chunks-heading {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+    padding-bottom: 17px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chunk-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chunk-item {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .chunk-content { flex: 1; }
+
+  .chunk-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #E96C51;
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .chunk-item:hover .chunk-delete-btn { opacity: 1; }
+  .chunk-delete-btn:hover { transform: scale(1.2); }
+
+  .chunk-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .chunk-text {
+    font-size: 16px;
+    line-height: 26px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border-footer);
+    padding: 49px 48px 48px;
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    max-width: 1440px;
+  }
+
+  .footer-brand {
+    font-size: 18px;
+    color: var(--text-primary);
+    line-height: 28px;
+  }
+
+  .footer-sub {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .footer-copyright {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .main { padding: 0 24px; }
+    .header-inner { padding: 16px 24px; }
+    .page-title { font-size: 48px; line-height: 52px; padding: 64px 0 48px; }
+    .search-input-section { padding: 0; }
+    .search-input { font-size: 20px; }
+    .search-results-layout { grid-template-columns: 1fr; gap: 48px; }
+    .synthesis-section { position: static; }
+    .history-query-text, .document-name { font-size: 24px; line-height: 30px; }
+    .history-item, .document-item { grid-template-columns: 80px 1fr 40px; }
+    .header-nav { gap: 24px; }
+    .header-nav a { font-size: 14px; }
+    .footer { padding: 32px 24px; }
+    .document-detail-title { font-size: 24px; line-height: 30px; }
+  }
+
+  @media (max-width: 600px) {
+    .header-icons { display: none; }
+    .header-nav { gap: 16px; }
+    .page-title { font-size: 36px; line-height: 40px; padding: 48px 0 32px; }
+  }
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>RAG</h1>
-    <p class="subtitle">Ask questions about your documents</p>
 
-    <div class="stats" id="stats"></div>
-
-    <div class="input-group">
-      <input type="text" id="question" placeholder="Ask a question..." autofocus>
-      <button id="ask" onclick="askQuestion()">Ask</button>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">RAG</div>
+      <nav class="header-nav">
+        <a onclick="switchView('documents')" id="nav-documents">Documents</a>
+        <a onclick="switchView('search')" id="nav-search" class="active">Search</a>
+        <a onclick="switchView('history')" id="nav-history">History</a>
+      </nav>
+      <div class="header-icons">
+        <button class="header-icon-btn" id="darkModeToggle" title="Toggle dark mode">
+          <!-- Moon icon (shown in light mode) -->
+          <svg class="icon-moon" width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M13.5 8.2A6.5 6.5 0 016.8 1.5 6 6 0 1013.5 8.2z"/>
+          </svg>
+          <!-- Sun icon (shown in dark mode) -->
+          <svg class="icon-sun" width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2">
+            <circle cx="7.5" cy="7.5" r="2.5"/>
+            <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M2.7 2.7l1.1 1.1M11.2 11.2l1.1 1.1M2.7 12.3l1.1-1.1M11.2 3.8l1.1-1.1"/>
+          </svg>
+        </button>
+        <div class="header-avatar">
+          <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor">
+            <circle cx="3.5" cy="2" r="2" fill="#888"/>
+            <path d="M0 7a3.5 3.5 0 017 0H0z" fill="#888"/>
+          </svg>
+        </div>
+      </div>
     </div>
+    <div class="header-divider"></div>
+  </header>
 
-    <div class="loading" id="loading">Searching and generating</div>
-
-    <div class="answer-box" id="answerBox">
-      <div class="answer-label">Answer</div>
-      <div class="answer-text" id="answerText"></div>
+  <!-- PDF Modal -->
+  <div class="pdf-modal" id="pdfModal">
+    <div class="pdf-modal-header">
+      <span class="pdf-modal-title" id="pdfModalTitle"></span>
+      <div class="pdf-modal-nav">
+        <button id="pdfPrev" title="Previous page">&larr; Prev</button>
+        <span class="pdf-modal-page-info" id="pdfPageInfo"></span>
+        <button id="pdfNext" title="Next page">Next &rarr;</button>
+      </div>
+      <button class="pdf-modal-close" id="pdfModalClose" title="Close">&times;</button>
     </div>
-
-    <div class="sources" id="sourcesBox">
-      <div class="sources-label">Sources</div>
-      <div id="sourcesList"></div>
+    <div class="pdf-modal-canvas-wrapper">
+      <canvas id="pdfModalCanvas"></canvas>
     </div>
   </div>
 
-<script>
-  const questionInput = document.getElementById('question');
-  const askBtn = document.getElementById('ask');
-  const loading = document.getElementById('loading');
-  const answerBox = document.getElementById('answerBox');
-  const answerText = document.getElementById('answerText');
-  const sourcesBox = document.getElementById('sourcesBox');
-  const sourcesList = document.getElementById('sourcesList');
+  <!-- Main Content -->
+  <main class="main">
 
-  // Enter key submits
-  questionInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') askQuestion();
+    <!-- Search View -->
+    <div id="searchView" class="view active">
+      <h1 class="page-title">Search</h1>
+
+      <div class="search-input-section">
+        <div class="search-input-wrapper">
+          <textarea class="search-input" id="searchInput" placeholder="enter your query here" autofocus rows="1"></textarea>
+          <div class="search-input-divider"></div>
+        </div>
+      </div>
+
+      <div class="search-loading" id="searchLoading">
+        <span class="search-loading-text">Searching and synthesizing</span>
+      </div>
+
+      <div class="search-results-layout" id="searchResults">
+        <div class="synthesis-section">
+          <div class="synthesis-header">
+            <span class="synthesis-title">Synthesis</span>
+            <div class="confidence-badge" id="confidenceBadge" style="display:none">
+              <span class="confidence-label">Confidence</span>
+              <span class="confidence-value" id="confidenceValue"></span>
+            </div>
+          </div>
+          <div class="synthesis-text" id="synthesisText"></div>
+        </div>
+
+        <div class="citations-section">
+          <div class="citations-heading">Document Citations</div>
+          <div class="citations-list" id="citationsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History View -->
+    <div id="historyView" class="view">
+      <h1 class="page-title">Archived<br>Queries</h1>
+      <div id="historyList"></div>
+    </div>
+
+    <!-- Documents View -->
+    <div id="documentsView" class="view">
+      <h1 class="page-title">Documents</h1>
+      <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('uploadInput').click()">+ Upload PDF</button>
+      <input type="file" id="uploadInput" accept=".pdf" style="display:none" multiple>
+      <div id="uploadStatus" class="upload-status" style="display:none"></div>
+      <div class="documents-stats" id="documentsStats"></div>
+      <div class="documents-list" id="documentsList"></div>
+      <div class="document-detail" id="documentDetail">
+        <button class="document-detail-back" id="documentDetailBack">&larr; Back to documents</button>
+        <h2 class="document-detail-title" id="documentDetailTitle"></h2>
+        <div class="document-detail-preview" id="documentDetailPreview"></div>
+        <div class="chunks-heading" id="chunksHeading"></div>
+        <div class="chunk-list" id="documentDetailChunks"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">RAG</div>
+        <div class="footer-sub">Founders &amp; Coders project_2</div>
+      </div>
+      <div class="footer-copyright">&copy; 2026</div>
+    </div>
+  </footer>
+
+<script>
+  // ── PDF.js Setup ──
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdfCache = new Map();
+
+  async function getPdfDoc(filename) {
+    if (pdfCache.has(filename)) return pdfCache.get(filename);
+    const url = '/pdfs/' + encodeURIComponent(filename);
+    const doc = await pdfjsLib.getDocument(url).promise;
+    pdfCache.set(filename, doc);
+    return doc;
+  }
+
+  async function renderPdfThumbnail(filename, pageNum, canvas) {
+    try {
+      const doc = await getPdfDoc(filename);
+      const page = await doc.getPage(pageNum || 1);
+      const viewport = page.getViewport({ scale: 0.5 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    } catch (e) {
+      // Fallback: gray placeholder
+      canvas.width = 200;
+      canvas.height = 267;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#a0a0a0';
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(0, 0, 200, 267);
+    }
+  }
+
+  // ── PDF Modal ──
+  let modalPdf = null;
+  let modalPage = 1;
+  let modalTotalPages = 1;
+
+  const pdfModal = document.getElementById('pdfModal');
+  const pdfModalCanvas = document.getElementById('pdfModalCanvas');
+  const pdfModalTitle = document.getElementById('pdfModalTitle');
+  const pdfPageInfo = document.getElementById('pdfPageInfo');
+  const pdfPrev = document.getElementById('pdfPrev');
+  const pdfNext = document.getElementById('pdfNext');
+
+  async function openPdfModal(filename, page) {
+    modalPdf = await getPdfDoc(filename);
+    modalTotalPages = modalPdf.numPages;
+    modalPage = Math.min(page || 1, modalTotalPages);
+    pdfModalTitle.textContent = filename;
+    pdfModal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    await renderModalPage();
+  }
+
+  async function renderModalPage() {
+    const page = await modalPdf.getPage(modalPage);
+    const viewport = page.getViewport({ scale: 1.5 });
+    pdfModalCanvas.width = viewport.width;
+    pdfModalCanvas.height = viewport.height;
+    await page.render({ canvasContext: pdfModalCanvas.getContext('2d'), viewport }).promise;
+    pdfPageInfo.textContent = modalPage + ' / ' + modalTotalPages;
+    pdfPrev.disabled = modalPage <= 1;
+    pdfNext.disabled = modalPage >= modalTotalPages;
+  }
+
+  function closePdfModal() {
+    pdfModal.classList.remove('visible');
+    document.body.style.overflow = '';
+    modalPdf = null;
+  }
+
+  document.getElementById('pdfModalClose').addEventListener('click', closePdfModal);
+  pdfPrev.addEventListener('click', () => { if (modalPage > 1) { modalPage--; renderModalPage(); } });
+  pdfNext.addEventListener('click', () => { if (modalPage < modalTotalPages) { modalPage++; renderModalPage(); } });
+  pdfModal.addEventListener('click', (e) => { if (e.target === pdfModal) closePdfModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pdfModal.classList.contains('visible')) closePdfModal(); });
+
+  // ── Dark Mode ──
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
   });
 
-  // Load stats on page load
-  async function loadStats() {
-    try {
-      const res = await fetch('/stats');
-      const data = await res.json();
-      document.getElementById('stats').innerHTML =
-        `<div>Files: <span>${data.files}</span></div>` +
-        `<div>Chunks: <span>${data.chunks}</span></div>` +
-        `<div>Queries: <span>${data.queries_logged}</span></div>`;
-    } catch (e) {}
+  // Restore preference (dark mode by default)
+  if (localStorage.getItem('darkMode') === 'false') {
+    // User explicitly chose light mode
+  } else {
+    document.body.classList.add('dark-mode');
   }
-  loadStats();
 
-  async function askQuestion() {
-    const q = questionInput.value.trim();
+  // ── State ──
+  let historyOffset = 0;
+  let historyTotal = 0;
+  const HISTORY_LIMIT = 20;
+
+  // ── Navigation ──
+  function switchView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.header-nav a').forEach(a => a.classList.remove('active'));
+
+    document.getElementById(view + 'View').classList.add('active');
+    document.getElementById('nav-' + view).classList.add('active');
+
+    if (view === 'history') {
+      historyOffset = 0;
+      loadHistory(false);
+    }
+    if (view === 'documents') {
+      closeDocumentDetail();
+      loadDocuments();
+    }
+    if (view === 'search') {
+      document.getElementById('searchInput').focus();
+    }
+  }
+
+  // ── Search ──
+  const searchInput = document.getElementById('searchInput');
+  const searchLoading = document.getElementById('searchLoading');
+  const searchResults = document.getElementById('searchResults');
+
+  // Auto-resize textarea
+  function autoResize() {
+    searchInput.style.height = 'auto';
+    searchInput.style.height = searchInput.scrollHeight + 'px';
+  }
+  searchInput.addEventListener('input', autoResize);
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      performSearch();
+    }
+  });
+
+  async function performSearch() {
+    const q = searchInput.value.trim();
     if (!q) return;
 
-    // UI state: loading
-    askBtn.disabled = true;
-    loading.classList.add('visible');
-    answerBox.classList.remove('visible');
-    sourcesBox.classList.remove('visible');
+    searchLoading.classList.add('visible');
+    searchResults.classList.remove('visible');
 
     try {
       const res = await fetch('/query', {
@@ -237,30 +1127,295 @@
         body: JSON.stringify({ question: q }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
+      if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
 
-      // Show answer
-      answerText.textContent = data.answer;
-      answerBox.classList.add('visible');
+      // Synthesis text
+      document.getElementById('synthesisText').textContent = data.answer;
 
-      // Show sources
+      // Confidence badge
       if (data.sources && data.sources.length > 0) {
-        sourcesList.innerHTML = data.sources.map(s =>
-          `<span class="source-chip">${s.filename} p.${s.page}<span class="sim">${s.similarity}</span></span>`
-        ).join('');
-        sourcesBox.classList.add('visible');
+        const avgSim = data.sources.reduce((s, c) => s + c.similarity, 0) / data.sources.length;
+        const pct = avgSim * 100;
+        const confEl = document.getElementById('confidenceValue');
+        if (pct >= 90) {
+          confEl.textContent = 'High';
+          confEl.style.color = '#64B97A';
+        } else if (pct >= 70) {
+          confEl.textContent = 'Moderate';
+          confEl.style.color = '#F2B24C';
+        } else {
+          confEl.textContent = 'Low';
+          confEl.style.color = '#E96C51';
+        }
+        document.getElementById('confidenceBadge').style.display = '';
+      } else {
+        document.getElementById('confidenceBadge').style.display = 'none';
       }
 
-      loadStats();
+      // Citations with PDF thumbnails
+      const citationsList = document.getElementById('citationsList');
+      citationsList.innerHTML = '';
+
+      if (data.sources && data.sources.length > 0) {
+        data.sources.forEach((src) => {
+          const item = document.createElement('div');
+          item.className = 'citation-item';
+          item.innerHTML =
+            '<div class="citation-thumbnail"><canvas></canvas></div>' +
+            '<div class="citation-author">' + escapeHtml(src.filename) + '</div>' +
+            '<div class="citation-title">PAGE ' + src.page + '</div>' +
+            '<div class="citation-date">Similarity: ' + src.similarity + '</div>';
+          citationsList.appendChild(item);
+
+          // Render PDF thumbnail
+          const canvas = item.querySelector('canvas');
+          renderPdfThumbnail(src.filename, src.page, canvas);
+
+          // Click opens inline modal
+          item.addEventListener('click', () => openPdfModal(src.filename, src.page));
+        });
+
+        if (data.sources.length > 2) {
+          const btn = document.createElement('button');
+          btn.className = 'view-all-btn';
+          btn.textContent = 'VIEW ALL REFERENCES (' + data.sources.length + ')';
+          citationsList.appendChild(btn);
+        }
+      }
+
+      searchResults.classList.add('visible');
     } catch (err) {
-      answerText.textContent = `Error: ${err.message}`;
-      answerBox.classList.add('visible');
+      document.getElementById('synthesisText').textContent = 'Error: ' + err.message;
+      document.getElementById('confidenceBadge').style.display = 'none';
+      document.getElementById('citationsList').innerHTML = '';
+      searchResults.classList.add('visible');
     } finally {
-      askBtn.disabled = false;
-      loading.classList.remove('visible');
+      searchLoading.classList.remove('visible');
     }
+  }
+
+  // ── History ──
+  async function loadHistory(append) {
+    const list = document.getElementById('historyList');
+    if (!append) list.innerHTML = '';
+
+    try {
+      const res = await fetch('/history?limit=' + HISTORY_LIMIT + '&offset=' + historyOffset);
+      const data = await res.json();
+      historyTotal = data.total;
+
+      if (data.entries.length === 0 && !append) {
+        list.innerHTML = '<div class="history-empty">No queries yet</div>';
+        return;
+      }
+
+      const groups = {};
+      data.entries.forEach(entry => {
+        const date = new Date(entry.created_at);
+        const key = getDateLabel(date);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(entry);
+      });
+
+      Object.keys(groups).forEach(dateLabel => {
+        const section = document.createElement('div');
+        section.className = 'timeline-section';
+
+        section.innerHTML = '<div class="timeline-date-header"><span class="timeline-date-label">' + escapeHtml(dateLabel) + '</span></div>';
+
+        groups[dateLabel].forEach(entry => {
+          const item = document.createElement('div');
+          item.className = 'history-item';
+
+          const time = new Date(entry.created_at);
+          const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+          item.innerHTML =
+            '<div class="history-time">' + timeStr + '</div>' +
+            '<div class="history-query-text">' + escapeHtml(entry.query_text) + '</div>' +
+            '<div class="history-delete"><button class="history-delete-btn" title="View"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1"><line x1="1" y1="1" x2="10" y2="10"/><line x1="10" y1="1" x2="1" y2="10"/></svg></button></div>';
+
+          item.addEventListener('click', () => {
+            searchInput.value = entry.query_text;
+            autoResize();
+            switchView('search');
+            performSearch();
+          });
+
+          section.appendChild(item);
+        });
+
+        list.appendChild(section);
+      });
+
+      const oldBtn = list.querySelector('.load-more-section');
+      if (oldBtn) oldBtn.remove();
+
+      historyOffset += data.entries.length;
+      if (historyOffset < historyTotal) {
+        const loadMore = document.createElement('div');
+        loadMore.className = 'load-more-section';
+        loadMore.innerHTML =
+          '<button class="load-more-btn">Show older queries</button>' +
+          '<div class="load-more-divider"></div>';
+        loadMore.querySelector('button').addEventListener('click', (e) => {
+          e.stopPropagation();
+          loadHistory(true);
+        });
+        list.appendChild(loadMore);
+      }
+    } catch (e) {
+      if (!append) list.innerHTML = '<div class="history-empty">Failed to load history</div>';
+    }
+  }
+
+  function getDateLabel(date) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diff = (today - target) / (1000 * 60 * 60 * 24);
+
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  }
+
+  // ── Documents ──
+  async function loadDocuments() {
+    const list = document.getElementById('documentsList');
+    const stats = document.getElementById('documentsStats');
+
+    try {
+      const [filesRes, statsRes] = await Promise.all([
+        fetch('/files'),
+        fetch('/stats')
+      ]);
+      const files = await filesRes.json();
+      const statsData = await statsRes.json();
+
+      stats.innerHTML =
+        '<div class="stat-item"><div class="stat-label">Files</div><div class="stat-value">' + statsData.files + '</div></div>' +
+        '<div class="stat-item"><div class="stat-label">Chunks</div><div class="stat-value">' + statsData.chunks + '</div></div>' +
+        '<div class="stat-item"><div class="stat-label">Queries</div><div class="stat-value">' + statsData.queries_logged + '</div></div>';
+
+      list.innerHTML = '';
+      if (files.length === 0) {
+        list.innerHTML = '<div class="history-empty">No documents ingested yet</div>';
+        return;
+      }
+
+      files.forEach((file, i) => {
+        const item = document.createElement('div');
+        item.className = 'document-item';
+        const date = new Date(file.ingested_at);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        item.innerHTML =
+          '<div class="document-index">' + String(i + 1).padStart(2, '0') + '</div>' +
+          '<div class="document-name">' + escapeHtml(file.filename) + '</div>' +
+          '<div class="document-date">' + dateStr + '</div>';
+        item.addEventListener('click', () => openDocumentDetail(file.id, file.filename));
+        list.appendChild(item);
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="history-empty">Failed to load documents</div>';
+    }
+  }
+
+  // ── Document Detail ──
+  async function openDocumentDetail(fileId, filename) {
+    document.getElementById('documentsList').style.display = 'none';
+    document.getElementById('documentsStats').style.display = 'none';
+    const detail = document.getElementById('documentDetail');
+    detail.classList.add('active');
+
+    document.getElementById('documentDetailTitle').textContent = filename;
+
+    // Render PDF thumbnail (page 1)
+    const previewContainer = document.getElementById('documentDetailPreview');
+    previewContainer.innerHTML = '<canvas></canvas>';
+    const canvas = previewContainer.querySelector('canvas');
+    renderPdfThumbnail(filename, 1, canvas);
+
+    // Click preview to open modal
+    previewContainer.onclick = () => openPdfModal(filename, 1);
+
+    // Fetch chunks
+    const chunksContainer = document.getElementById('documentDetailChunks');
+    chunksContainer.innerHTML = '<div class="history-empty">Loading chunks...</div>';
+
+    try {
+      const res = await fetch('/files/' + fileId + '/chunks');
+      if (!res.ok) throw new Error('Failed to load');
+      const chunks = await res.json();
+
+      document.getElementById('chunksHeading').textContent = 'Chunks (' + chunks.length + ')';
+      chunksContainer.innerHTML = '';
+
+      chunks.forEach(chunk => {
+        const el = document.createElement('div');
+        el.className = 'chunk-item';
+        el.innerHTML =
+          '<div class="chunk-content">' +
+            '<div class="chunk-meta">Chunk ' + chunk.chunk_index + ' &middot; Page ' + (chunk.page_number || '?') + '</div>' +
+            '<div class="chunk-text">' + escapeHtml(chunk.text) + '</div>' +
+          '</div>' +
+          '<button class="chunk-delete-btn" title="Delete chunk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg></button>';
+        el.querySelector('.chunk-delete-btn').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await fetch('/chunks/' + chunk.id, { method: 'DELETE' });
+          el.remove();
+          const remaining = document.querySelectorAll('#documentDetailChunks .chunk-item').length;
+          document.getElementById('chunksHeading').textContent = 'Chunks (' + remaining + ')';
+        });
+        chunksContainer.appendChild(el);
+      });
+    } catch (e) {
+      chunksContainer.innerHTML = '<div class="history-empty">Failed to load chunks</div>';
+    }
+  }
+
+  function closeDocumentDetail() {
+    document.getElementById('documentDetail').classList.remove('active');
+    document.getElementById('documentsList').style.display = '';
+    document.getElementById('documentsStats').style.display = '';
+  }
+
+  document.getElementById('documentDetailBack').addEventListener('click', closeDocumentDetail);
+
+  // ── Upload ──
+  document.getElementById('uploadInput').addEventListener('change', async (e) => {
+    const files = e.target.files;
+    if (!files.length) return;
+
+    const btn = document.getElementById('uploadBtn');
+    const status = document.getElementById('uploadStatus');
+    btn.disabled = true;
+    status.style.display = '';
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      status.textContent = 'Uploading ' + file.name + ' (' + (i + 1) + '/' + files.length + ')...';
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        await fetch('/upload', { method: 'POST', body: formData });
+      } catch (err) {
+        status.textContent = 'Error uploading ' + file.name;
+      }
+    }
+
+    status.textContent = 'Processing complete. Chunks are being generated in the background.';
+    btn.disabled = false;
+    e.target.value = '';
+    setTimeout(() => { status.style.display = 'none'; loadDocuments(); }, 3000);
+  });
+
+  // ── Utilities ──
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
   }
 </script>
 </body>
