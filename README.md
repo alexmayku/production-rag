@@ -10,61 +10,16 @@ PDFs → ingest.py → [extract → chunk → embed] → PostgreSQL (pgvector)
 Frontend → FastAPI (query.py) → [embed query → vector search → Claude] → Answer
 ```
 
-## Quick Start (Hetzner Deployment)
+## Quick Start (Local with Docker)
 
-### 1. SSH into your server
-
-```bash
-ssh root@49.13.62.82
-```
-
-(Use the private key from the learning portal — save it to `~/.ssh/fac_key`
-and run `chmod 600 ~/.ssh/fac_key`, then `ssh -i ~/.ssh/fac_key root@49.13.62.82`)
-
-### 2. Install Docker (if not already installed)
+### 1. Configure environment
 
 ```bash
-curl -fsSL https://get.docker.com | sh
-```
-
-### 3. Clone / upload the project
-
-> **Run this step on your local machine**, not on the server.
-
-**Option A: git clone** (if you pushed to a repo)
-
-```bash
-# On the server
-git clone <your-repo-url> rag-system
-cd rag-system
-```
-
-**Option B: rsync from your local machine**
-
-```bash
-# Sync the project, excluding .env and PDF files
-rsync -avz \
-  -e "ssh -i ~/.ssh/fac_key" \
-  --exclude='.env' \
-  --exclude='data/*.pdf' \
-  ./rag-system/ root@49.13.62.82:/root/rag-system/
-```
-
-To upload PDFs separately:
-
-```bash
-scp -i ~/.ssh/fac_key data/*.pdf root@49.13.62.82:/root/rag-system/data/
-```
-
-### 4. Configure environment
-
-```bash
-cd /root/rag-system
 cp .env.example .env
-nano .env   # Add your ANTHROPIC_API_KEY and OPENAI_API_KEY
+# Edit .env and add your ANTHROPIC_API_KEY and OPENAI_API_KEY
 ```
 
-### 5. Launch
+### 2. Launch
 
 ```bash
 docker compose up -d --build
@@ -75,7 +30,7 @@ Check logs:
 docker compose logs -f
 ```
 
-### 6. Ingest PDFs
+### 3. Ingest PDFs
 
 Drop PDFs into the `data/` folder, then:
 
@@ -87,9 +42,9 @@ docker compose exec app python ingest.py
 docker compose exec app python ingest.py myfile.pdf
 ```
 
-### 7. Use it
+### 4. Use it
 
-Open `http://49.13.62.82:8000` in your browser.
+Open `http://localhost:8000` in your browser.
 
 Or test with curl:
 ```bash
